@@ -53,11 +53,16 @@ public:
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 	
 signals:
-
+	// entire data model changed
+	// (backing file different)
+	// -> should reset view ?
+	// note: check signals from base for suitable..
+	//void BackingModelChanged();
+	
 public slots:
 
 protected:
-	inline void Encode(uchar *pDigest, const int iLen, QString &szOutput) const;
+	inline void Encode(uchar *pDigest, const size_t nLen, QString &szOutput) const;
 	
 private:
 	QFile *m_pCurrentFile;

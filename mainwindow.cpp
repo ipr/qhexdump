@@ -7,16 +7,14 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     m_pUi(new Ui::MainWindow),
-    m_pModel(NULL),
+    m_pModel(nullptr), // expect C++0x support..
 	m_szBaseTitle()
 {
     m_pUi->setupUi(this);
 	m_szBaseTitle = windowTitle();
 	
     connect(this, SIGNAL(FileSelected(QString)), SLOT(FileSelection(QString)));
-	//connect(m_pUi->tableView, SIGNAL(activated(QModelIndex)), SLOT(ColActivated(QModelIndex)));
 	connect(this, SIGNAL(ResizeColumns()), m_pUi->tableView, SLOT(resizeColumnsToContents()));
-	//connect(this, SIGNAL(ShowRow(int)), m_pUi->tableView, SLOT(showRow(int)));
 	
 	// if file given in command line
 	QStringList vCmdLine = QApplication::arguments();
@@ -28,11 +26,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
-	if (m_pModel != NULL)
+	if (m_pModel != nullptr)
 	{
 		m_pModel->close();
 		delete m_pModel;
-		m_pModel = NULL;
+		m_pModel = nullptr;
 	}
     delete m_pUi;
 }
@@ -40,18 +38,20 @@ MainWindow::~MainWindow()
 void MainWindow::FileSelection(QString szNewFile)
 {
 	// we are using destroying to make view "forget" the model
-	if (m_pModel != NULL)
+	if (m_pModel != nullptr)
 	{
 		m_pModel->close();
 		delete m_pModel;
-		m_pModel = NULL;
+		m_pModel = nullptr;
 	}
-	
+
+	// TODO: we should not need new instance
+	// (simplest way to reset view though..)
 	m_pModel = new CHexFileModel(this);
 	if (m_pModel->setSourceFile(szNewFile) == false)
 	{
 		delete m_pModel;
-		m_pModel = NULL;
+		m_pModel = nullptr;
 		
 		setWindowTitle(m_szBaseTitle);
 		return;
@@ -60,29 +60,13 @@ void MainWindow::FileSelection(QString szNewFile)
 	// use this model
 	m_pUi->tableView->setModel(m_pModel);
 	
-	// TODO:
-	// scroll to first row on change..
+	// scroll to first row on change
+	m_pUi->tableView->scrollToTop();
 
 	// resize view to contents
 	emit ResizeColumns();
 	
-	// set width of column to fit all chars with current font
-	// (ASCII-col)
-	//
-	/*
-	QFontInfo fi = m_pUi->tableView->fontInfo();
-	m_pUi->tableView->setColumnWidth(4, fi.pixelSize()*16);
-	*/
-	
-	/*
-	// resize window to fit contents
-	QSize vSize = m_pUi->tableView->size();
-	QSize wndFrame = (frameSize() - size());
-	resize(vSize + wndFrame);
-	*/
-	
 	// show current file in title bar
-	//setWindowFilePath(szNewFile);
 	setWindowTitle(m_szBaseTitle + " - " + szNewFile);
 	
 	// show entire file size in status bar
@@ -90,23 +74,6 @@ void MainWindow::FileSelection(QString szNewFile)
 	szSize.setNum(m_pModel->fileSize());
 	m_pUi->statusBar->showMessage("Size: " + szSize);
 }
-
-/*
-void MainWindow::ColActivated(QModelIndex index)
-{
-	if (index.column() < 4)
-	{
-		// data selected
-		// -> highlight byte in ASCII
-		//m_pUi->tableView->se
-	}
-	else if (index.column() == 4)
-	{
-		// ASCII selected
-		// -> highlight all bytes?
-	}
-}
-*/
 
 void MainWindow::on_actionChooseFile_triggered()
 {

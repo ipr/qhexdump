@@ -58,6 +58,9 @@ bool CHexFileModel::setSourceFile(const QString &szFile)
 	{
 		return false;
 	}
+	
+	// note: check signals from base for suitable..
+	//emit BackingModelChanged();
 	return true;
 }
 
@@ -289,14 +292,24 @@ QVariant CHexFileModel::data(const QModelIndex &index, int role) const
 	return QVariant(szValue);
 }
 
-void CHexFileModel::Encode(uchar *pDigest, const int iLen, QString &szOutput) const
+void CHexFileModel::Encode(uchar *pDigest, const size_t nLen, QString &szOutput) const
 {
 	char hextable[] = "0123456789ABCDEF";
 
+	// reserve 2*iLen space in output 
+	// (should improve efficiency slightly..)
+	//
+	size_t nSize = (szOutput.size() + (nLen*2));
+	size_t nCapacity = szOutput.capacity();
+	if (nCapacity < nSize)
+	{
+		szOutput.reserve(nSize);
+	}
+	
 	// determine half-bytes of each byte 
 	// and appropriate character representing value of it
 	// for hex-encoded string
-	for ( int y = 0; y < iLen; y++ )
+	for ( size_t y = 0; y < nLen; y++ )
 	{
 		unsigned char upper;
 		unsigned char lower;
@@ -308,10 +321,9 @@ void CHexFileModel::Encode(uchar *pDigest, const int iLen, QString &szOutput) co
 		upper = upper >> 4;
 		upper = upper & 0xF;
 
-
-		// C++ STL string grows automatically so we just push new
-		// characters at the end
-
+		// STL string grows automatically so we just push new
+		// characters at the end, same way with reserve().
+		//
 		szOutput += hextable[upper]; szOutput += hextable[lower];
 	}
 }
